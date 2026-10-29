@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NULLXES VAYRAN
 
-## Getting Started
+**Машина анализа драфтов и контрпиков.**
 
-First, run the development server:
+Цель — **предлагать сильнейшие обоснованные решения** на основе матчапов, составов команд, актуальной меты и статистики высоких рангов.
+
+VAYRAN — самостоятельная аналитическая система NULLXES для **Mobile Legends: Bang Bang**. Она предназначена для оценки игровых драфтов, поиска контрпиков, анализа синергии и выявления решений, которые способны улучшить состав команды.
+
+> **Не просто какой герой сильнее. А какой выбор сильнее в конкретном матче — и почему.**
+
+## Основные направления
+
+| Система | Назначение |
+| --- | --- |
+| **Draft Analysis** | Анализ союзного и вражеского составов, ролей, банов и баланса драфта. |
+| **Counterpick Intelligence** | Поиск обоснованных контрпиков с учётом конкретных матчапов. |
+| **Hero Statistics** | Оценка героев по релевантной статистике, патчу и ранговому сегменту. |
+| **Team Synergy** | Анализ взаимодействия героев, инициации, контроля, урона и устойчивости состава. |
+| **Draft Prediction** | Оценка вероятного преимущества команд при наличии достаточных проверенных данных. |
+| **Player Intelligence** | Персональные рекомендации и разбор игровых показателей — запланированное направление. |
+
+## Рейтинговая аналитика
+
+VAYRAN не смешивает игроков всех уровней в один глобальный рейтинг. Анализ ведётся по отдельным сегментам:
+
+- **Legend**
+- **Mythic**
+- **Mythical Honor**
+- **Mythical Glory**
+- **Mythical Immortal**
+
+**Grandmaster и Epic исключены** из аналитического охвата проекта.
+
+Рекомендации должны учитывать актуальный патч, роль героя, комбинации союзников и противников, доступность выборки и качество исходных данных. Сильный герой в одном сегменте не автоматически считается оптимальным в другом.
+
+## Принцип прогнозирования
+
+1. Пользователь задаёт драфт двух команд и баны.
+2. Система учитывает выбранный рейтинговый сегмент и доступную статистику.
+3. Анализируются матчапы, командная синергия, потенциальные слабости и ограничения состава.
+4. VAYRAN предлагает конкретные изменения с объяснением причин.
+5. Числовой прогноз появляется **только при наличии достаточных данных и обоснованной модели**.
+
+Никаких вымышленных винрейтов, фиктивных матчей и придуманных вероятностей победы. Если данных недостаточно, система прямо сообщает об этом.
+
+## Технологическая основа
+
+**Текущий этап — frontend-first.** Интерфейс создаётся на:
+
+- Next.js (App Router) и React;
+- TypeScript;
+- Tailwind CSS;
+- shadcn/ui в конфигурации **aria-nova / React Aria**;
+- Lucide.
+
+Дизайн NULLXES: чёрный, графит, белый, металлические акценты, минимализм и высокая информационная плотность без игрового визуального шума.
+
+**Backend и API ещё не подключены.** В перспективе предусмотрены GPT API для интерфейсных объяснений и Grok API для аналитического комментария. Они не подменяют статистическую модель, не генерируют факты из воздуха и работают через защищённый серверный слой. Локальная LLM не планируется.
+
+## Локальный запуск
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Открыть [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Для проверки существующего приложения:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
 
-## Learn More
+## Инженерная документация
 
-To learn more about Next.js, take a look at the following resources:
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — архитектура, границы системы и этапы реализации.
+- [AGENTS.md](./AGENTS.md) — обязательные правила разработки для кодовых агентов.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Кодовая база должна оставаться простой, поддерживаемой и честной по отношению к данным: **без тест-кейсов, mock-данных, фиктивных API-запросов и абстракций ради абстракций**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+**NULLXES · VAYRAN**  
+*Competitive Draft Intelligence*
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Независимый проект NULLXES. Не является официальным продуктом или партнёром Moonton.
