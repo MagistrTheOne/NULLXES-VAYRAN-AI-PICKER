@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife } from "next/cache";
 import { z } from "zod";
 import { getCatalog } from "./mlbbdex";
-import { type Rank } from "./heroes";
+import { type Rank, type Role } from "./heroes";
 import { DATA_WINDOWS, type DataWindow, type RankData, type SynergyData, type SynergyPair } from "./provider-data";
 
 const rankCodes: Partial<Record<Rank, string>> = { Legend: "legend", Mythic: "mythic", "Mythical Honor": "honor", "Mythical Glory": "glory" };
@@ -14,6 +14,40 @@ const rankResponse = z.object({ code: z.literal(0), data: z.object({ total: z.nu
 const pair = z.object({ heroid: z.number().int().positive(), increase_win_rate: z.number().min(-1).max(1) });
 const compatibilityResponse = z.object({ code: z.literal(0), data: z.object({ records: z.array(z.object({ _updatedAt: z.number().nonnegative().optional(), data: main.extend({ sub_hero: z.array(pair), sub_hero_last: z.array(pair).optional() }) })) }) });
 const indexResponse = z.object({ code: z.literal(0), data: z.object({ total: z.number().int(), records: z.array(z.object({ data: z.object({ hero_id: z.number().int().positive(), hero: z.object({ data: z.object({ name: z.string().min(1) }) }) }) })) }) });
+const counterPair = z.object({
+  heroid: z.number().int().positive(),
+  increase_win_rate: z.number().min(-1).max(1),
+});
+const counterResponse = z.object({
+  code: z.literal(0),
+  data: z.object({
+    records: z.array(z.object({
+      _updatedAt: z.number().nonnegative().optional(),
+      data: z.object({
+        main_heroid: z.number().int().positive(),
+        sub_hero: z.array(counterPair),
+        sub_hero_last: z.array(counterPair).optional(),
+      }),
+    })),
+  }),
+});
+const timelineResponse = z.object({
+  code: z.literal(0),
+  data: z.object({
+    records: z.array(z.object({
+      _updatedAt: z.number().nonnegative().optional(),
+      data: z.object({
+        heroid: z.number().int().positive(),
+        total_win_rate: fraction,
+        time_win_rate: z.array(z.object({
+          time_min: z.number().int().nonnegative(),
+          time_max: z.number().int().positive().optional(),
+          win_rate: fraction,
+        })),
+      }),
+    })),
+  }),
+});
 async function request(path: string): Promise<unknown> {
   const response = await fetch(`https://arena.rone.dev/api/${path}`, { cache: "no-store", headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error(`Rone Arena HTTP ${response.status}`);
@@ -50,6 +84,75 @@ async function compatibility(id: number, code: string, days: DataWindow) {
   const row = response.data.records.find(record => record.data.main_heroid === id);
   if (!row) throw new Error("No compatibility record for hero");
   return row;
+}
+async function counterRecord(id: number, code: string, days: DataWindow) {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 300, expire: 900 });
+  const response = counterResponse.parse(await request(`heroes/${id}/counters?rank=${code}&days=${days}&size=1&index=1&lang=en`));
+  const row = response.data.records.find(record => record.data.main_heroid === id);
+  if (!row) throw new Error("No counter record for hero");
+  return row;
+}
+const laneCodes: Record<Role, string> = {
+  EXP: "exp",
+  JUNGLE: "jungle",
+  MID: "mid",
+  GOLD: "gold",
+  ROAM: "roam",
+};
+async function laneTimeline(id: number, code: string, lane: string) {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 300, expire: 900 });
+  const response = timelineResponse.parse(await request(`academy/heroes/${id}/win-rate/timeline?lane=${lane}&rank=${code}&size=1&index=1&lang=en`));
+  const row = response.data.records.find(record => record.data.heroid === id);
+  if (!row) throw new Error("No lane timeline for hero");
+  return row;
+}
+async function canonicalHeroIds() {
+  const index = await heroIndex();
+  return {
+    providerIds: new Map(index.map(hero => [hero.heroId, hero.providerId])),
+    canonicalIds: new Map(index.map(hero => [hero.providerId, hero.heroId])),
+  };
+}
+export async function getDraftCounterData(heroId: string, rank: Rank, days: DataWindow) {
+  const code = providerRank(rank);
+  if (!code) throw new Error("Unsupported rank");
+  const { providerIds, canonicalIds } = await canonicalHeroIds();
+  const providerId = providerIds.get(heroId);
+  if (!providerId) throw new Error("Hero is not available in the Rone index");
+  const row = await counterRecord(providerId, code, days);
+  return {
+    mainHeroId: heroId,
+    updatedAt: row._updatedAt ? new Date(row._updatedAt).toISOString() : null,
+    counters: row.data.sub_hero.flatMap(entry => {
+      const counterHeroId = canonicalIds.get(entry.heroid);
+      return counterHeroId ? [{ heroId: counterHeroId, impact: entry.increase_win_rate * 100, relationship: "counter" as const }] : [];
+    }),
+    negative: (row.data.sub_hero_last ?? []).flatMap(entry => {
+      const counterHeroId = canonicalIds.get(entry.heroid);
+      return counterHeroId ? [{ heroId: counterHeroId, impact: entry.increase_win_rate * 100, relationship: "negative" as const }] : [];
+    }),
+  };
+}
+export async function getHeroLaneTimeline(heroId: string, role: Role, rank: Rank) {
+  const code = providerRank(rank);
+  if (!code) throw new Error("Unsupported rank");
+  const { providerIds } = await canonicalHeroIds();
+  const providerId = providerIds.get(heroId);
+  if (!providerId) throw new Error("Hero is not available in the Rone index");
+  const row = await laneTimeline(providerId, code, laneCodes[role]);
+  return {
+    heroId,
+    role,
+    winRate: row.data.total_win_rate * 100,
+    updatedAt: row._updatedAt ? new Date(row._updatedAt).toISOString() : null,
+    durations: row.data.time_win_rate.map(item => ({
+      timeMin: item.time_min,
+      timeMax: item.time_max ?? null,
+      winRate: item.win_rate * 100,
+    })),
+  };
 }
 export async function getSynergy(rank: Rank, days: DataWindow, allies: string[], enemies: string[], bans: string[]): Promise<SynergyData> {
   const code = providerRank(rank);

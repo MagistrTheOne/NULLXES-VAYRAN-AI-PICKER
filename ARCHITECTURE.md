@@ -2,7 +2,7 @@
 Version: 1.0 · 2026-10-29 · Owner: Мага / NULLXES
 
 ## 1. Identity and mission
-**NULLXES VAYRAN** is an independent competitive intelligence and draft prediction system for *Mobile Legends: Bang Bang* (MLBB). It analyses hero selections, bans, current patch, rank-specific hero statistics, team synergy, counters and eventually player performance to estimate match outcomes and recommend meaningful draft changes.
+**NULLXES VAYRAN** is an independent competitive intelligence and draft analysis system for *Mobile Legends: Bang Bang* (MLBB). It analyses hero selections, bans, rank-specific statistics, team synergy, counters and eventually player performance to recommend meaningful draft changes. A win probability is not displayed without an independently validated model.
 
 VAYRAN is a NULLXES product, not an official Moonton service. It is **not** a bot that plays the game, and not a generic AI chat wrapper. Every decision must serve an explainable competitive-analysis workflow.
 
@@ -16,7 +16,7 @@ Product pillars:
 Primary objective: identify which **concrete change to a draft** is expected to improve its matchup, not merely output a percentage.
 
 ## 2. Scope and delivery phases
-**Phase 1 — FRONTEND (active):** production-grade Next.js interface, navigation, real interactive draft editing and validation, responsive design, accurate empty/unavailable/error states, typed contracts and isolated UI state. No backend calls, LLM integrations, calibrated match predictions or invented statistics. An intentionally empty screen is preferable to fabricated data.
+**Phase 1 — FRONTEND (delivered foundation):** production-grade Next.js interface, navigation, real interactive draft editing and validation, responsive design, accurate empty/unavailable/error states, typed contracts and isolated UI state. No LLM integrations, calibrated match predictions or invented statistics.
 
 **Phase 2 — DATA/BACKEND (public-source integration authorized by ORDER 003A, 2026-10-30):** narrow server-only MLBBDex and Rone Arena adapters, schema validation, caching and guarded read-only data endpoints. No prediction model, authentication, database or LLM is authorized by this integration. Rank boundaries and missing provenance remain explicit.
 
@@ -53,11 +53,31 @@ Draft Lab requirements:
 - Pick/ban order or stage must be explicit when prediction depends on it; do not infer unprovided drafts.
 - Each rank segment selectable without collapsing statistics into an overall tier list.
 - Explicit `not_connected`, `insufficient_data`, `unavailable` and `ready` states. **No fictional metrics or demo percentages.**
-- Player authorization and profile data remain unavailable unless an official, documented Moonton authentication/data flow is confirmed. Never ask users for game passwords, in-game one-time codes, or session cookies.
+- Hero WR/pick/ban values must retain the selected rank and data window. A team baseline may be shown only as the explicitly labelled unweighted arithmetic mean of available selected-hero WRs; it is descriptive, not a team WR or probability, and sample counts must be disclosed as unavailable when the source omits them.
+- Keep each teammate-pair and counter result directional and individual; do not add pair deltas into a synergy or counter score.
+- Keep phase values at their source-provided hero/lane/time-bucket granularity. Do not calculate Early/Mid/Late team advantage without comparable samples and a documented aggregation method.
+- VAYRAN player identity is the pair `{ playerId, serverId }`; both must be positive integers. A provider may receive only documented request fields. Do not treat a lookup as identified unless the returned player ID matches and, when the provider supplies a server ID, it matches the requested server ID; if the provider omits the server ID, identity remains unconfirmed. Public lookup requires a documented, read-only provider and verified access terms. If provider authentication is required, only an explicit user-authorized flow permitted by that provider may be used; never access another player's protected account. Never ask for game passwords or session cookies.
+- ALU Player Lookup is fail-closed unless `ALU_LOOKUP_ENABLED`, `ALU_TERMS_APPROVED`, and `ALU_IP_WHITELISTED` are all explicitly set to `true`; these server-only flags are a release gate, not evidence that the conditions have been met. Successful identity-verified profiles are cached for 24 hours. The initial route limiter is process-local and derives client identity from proxy IP headers; only deploy behind a proxy that overwrites these headers. Do not enable a multi-instance public deployment without shared rate-limit storage or equivalent edge protection.
 - A draft win-rate strip requires real rank-, patch- and time-window-specific stage data. Do not average or normalize individual hero win rates into a team win probability. Show early/late rates only when the source explicitly provides phase outcomes with sample/provenance; otherwise keep the strip unavailable.
 - Responsive desktop/mobile experience; keyboard accessibility and clear focus/disabled states.
 
+### ORDER 014 — Draft Intelligence V1
+Read-only Rone Arena rank, counter and lane timeline data are authorized for the Draft Lab. Apply rank and time-window filters only where the provider supports them. Show raw provenance and missing sample/patch details. The current feature may provide descriptive hero baselines, role-slot coverage and individual matchup evidence; it does not produce draft win probability, model confidence, or a summed synergy/counter score. Commercial production use of Rone's hosted API remains subject to its by-arrangement terms.
+
 Rank policy: **exclude Grandmaster and Epic from analysis**. Legend, Mythic, Mythical Honor, Mythical Glory, Mythical Immortal are separate analytical populations. Do not aggregate them into a global rank to produce an overall hero prediction. Segmentation should later additionally account for patch, time range, role, region, party configuration and sample size where sources allow.
+
+### ORDER 015 — Full Draft Analysis
+The Draft Lab may show a symmetric, non-probabilistic `Draft Advantage Score` once both teams have rank-scoped hero WR data. Its documented heuristic is `allied = clamp(50 + (mean allied hero WR - mean enemy hero WR) / 2, 0, 100)` and `enemy = 100 - allied`. For an incomplete draft, the means use only rated selected heroes and remain explicitly provisional; absent data on either side means no score. This is a relative display index derived only from provider hero baselines, not a team WR, match-outcome estimate, confidence value, or calibrated win probability.
+
+Synergy and counter records remain directional individual observations and are shown separately, never summed into the index. Rank, statistics window, picks and bans are part of the analysis request key; bans also update the existing available-pair suggestions. Early/Mid/Late labels use the product-configured 0–8, 8–15 and 15+ minute bands. Only wholly contained source intervals are grouped; they remain per-hero/per-role observations because sample counts are absent. No team phase advantage is asserted.
+
+### ORDER 016 — Fixed Draft Workspace
+At desktop widths of 1280px and above, the Draft Lab uses the available viewport height below the existing top bar. Its compact header and matchup summary stay above the team columns and hero picker; only the hero catalog and the bounded `Details` popover scroll internally. The page shell suppresses its footer only while this fixed Draft Lab is active. Smaller viewports retain normal document scrolling and the existing responsive/mobile team selection. No other route receives the fixed-height behavior.
+
+### ORDER 017 — Matchup Bar and Tactical Intelligence
+The fixed summary presents the allied draft index on the left, VS centrally, the enemy index on the right, a two-color comparison bar, pick completion, unavailable Early/Mid/Late team indicators, and `Details`. Index values are shown only when both teams have rank-scoped selected-hero WR data; they are descriptive and never win probabilities. Per-hero interval counts must not be presented as phase advantage. When the source cannot support a phase comparison, show `—`. Calculation/request errors remain visible, and the active response must match the selected rank and statistics window before it is rendered.
+
+`Details` contains Overview, Game Plan, Matchups and Data. Game Plan uses only selected, directional Rone counter records and selected teammate-pair records. A lane is an evidence-backed gank candidate only when it has a positive direct counter record and a positive allied Jungle/Roam pair record. A unique lane priority requires a complete 5v5 and complete counter coverage for both teams plus pair coverage for all allied heroes; otherwise show insufficient evidence or multiple candidates without ranking them. These records are not a prediction that a gank will succeed. Turtle/Lord prompts remain conditional on live confirmation because VAYRAN has no match state, ability metadata, objective damage, wave state, hero levels or player positions. Do not invent skill properties or phase strength. Raw phase intervals remain per-hero records with their source limitations.
 
 ## 5. Architecture boundaries
 ```text

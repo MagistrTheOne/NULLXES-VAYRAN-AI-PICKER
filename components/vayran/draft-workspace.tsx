@@ -9,7 +9,7 @@ import { useCatalog } from "./catalog-provider";
 import { useDraft, type Target, type Team } from "./session";
 import { HeroSelector } from "./hero-selector";
 import { HeroPortrait } from "./hero-portrait";
-import { PageHeading } from "./shared";
+import { DraftIntelligencePanel } from "./draft-intelligence-panel";
 
 export function DraftWorkspace() {
   const { heroes } = useCatalog();
@@ -34,9 +34,6 @@ export function DraftWorkspace() {
       for (const id of draft.bans[team]) occupied.set(id, "BANNED");
     }
   }
-  const pickCount =
-    Object.values(draft.picks.ally).filter(Boolean).length +
-    Object.values(draft.picks.enemy).filter(Boolean).length;
   const banLimitReached =
     target.kind === "ban" && draft.bans[target.team].length >= 5;
   function selectTarget(next: Target) {
@@ -45,14 +42,14 @@ export function DraftWorkspace() {
     setRoleFilter(next.kind === "pick" ? next.role : "ALL");
   }
   return (
-    <div className="draft-page">
-      <PageHeading
-        eyebrow="COMPETITIVE DRAFT INTELLIGENCE"
-        title="Draft Lab"
-        description="Choose your heroes. Build your lineup."
-      >
+    <div className="draft-page draft-fixed-workspace">
+      <header className="draft-workspace-heading">
+        <div className="draft-title-group">
+          <span className="eyebrow">DRAFT INTELLIGENCE</span>
+          <h1>Draft Lab</h1>
+        </div>
         <div className="draft-heading-actions">
-          <Badge variant="outline">5 BANS MAX PER TEAM</Badge>
+          <Badge variant="outline">BANS {draft.bans.ally.length}/5 · {draft.bans.enemy.length}/5</Badge>
           <Button
             variant="outline"
             isDisabled={occupied.size === 0}
@@ -61,7 +58,7 @@ export function DraftWorkspace() {
             <RotateCcw /> Clear draft
           </Button>
         </div>
-      </PageHeading>
+      </header>
       {confirmClear ? (
         <div className="clear-confirmation" role="alert">
           <span>Remove all picks and bans?</span>
@@ -83,18 +80,7 @@ export function DraftWorkspace() {
           </Button>
         </div>
       ) : null}
-      <div className="draft-context">
-        <span>
-          <span className="status-dot" />{" "}
-          {pickCount === 10 ? "LINEUPS COMPLETE" : "BUILD YOUR LINEUP"}
-        </span>
-        <span>
-          {pickCount} / 10 picks<span className="count-separator">·</span>
-          {draft.bans.ally.length}/5 allied bans
-          <span className="count-separator">·</span>
-          {draft.bans.enemy.length}/5 enemy bans
-        </span>
-      </div>
+      <DraftIntelligencePanel />
       <div className="mobile-team-switch" aria-label="Visible team">
         {(["ally", "enemy"] as const).map((team) => (
           <Button

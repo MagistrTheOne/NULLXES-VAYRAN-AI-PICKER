@@ -1,4 +1,4 @@
-import type { Hero, Rank } from "./heroes";
+import type { Hero, Rank, Role } from "./heroes";
 
 export type Attribution = { name: string; url: string; license: string };
 export type CatalogData = { heroes: Hero[]; source: Attribution; fetchedAt: string; total: number; retained: number };
@@ -12,3 +12,33 @@ export type RankRow = { heroId: string | null; providerId: number; name: string;
 export type RankData = { rank: Rank; providerRank: string; days: DataWindow; rows: RankRow[]; total: number; fetchedAt: string; populationNote: string };
 export type SynergyPair = { allyId: string; heroId: string; delta: number; relationship: "positive" | "negative"; recordUpdatedAt: string | null; sourceUrl: string };
 export type SynergyData = { rank: Rank; days: DataWindow; candidates: SynergyPair[]; selectedPairs: SynergyPair[]; unavailableHeroIds: string[]; fetchedAt: string; populationNote: string };
+export type MatchDurationRate = { timeMin: number; timeMax: number | null; winRate: number };
+export type HeroLaneTimeline = {
+  heroId: string;
+  role: Role;
+  winRate: number;
+  updatedAt: string | null;
+  durations: MatchDurationRate[];
+};
+export type DraftCounterSignal = {
+  mainHeroId: string;
+  counterHeroId: string;
+  mainTeam: "ally" | "enemy";
+  counterTeam: "ally" | "enemy";
+  relationship: "counter" | "negative";
+  impact: number;
+  updatedAt: string | null;
+};
+export type DraftAnalysisData = {
+  rank: Rank;
+  days: DataWindow;
+  fetchedAt: string;
+  populationNote: string;
+  rankData: RankData;
+  timelines: HeroLaneTimeline[];
+  counters: DraftCounterSignal[];
+  synergyPairs: SynergyPair[];
+  unavailableSynergyHeroIds: string[];
+  unavailableTimelineHeroIds: string[];
+  unavailableCounterHeroIds: string[];
+};

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { RANKS, ROLES, type Hero, type Rank, type Role } from "@/lib/heroes";
+import { DATA_WINDOWS, type DataWindow } from "@/lib/provider-data";
 import { useCatalog } from "./catalog-provider";
 
 export type Team = "ally" | "enemy";
@@ -156,4 +157,37 @@ export function useRank() {
     window.dispatchEvent(new Event("vayran-rank"));
   }
   return { rank, setRank };
+}
+
+const windowKey = "vayran.data-window.v1";
+let memoryWindow: DataWindow = 7;
+function getDataWindow(): DataWindow {
+  try {
+    const stored = Number(sessionStorage.getItem(windowKey));
+    return DATA_WINDOWS.find(days => days === stored) ?? memoryWindow;
+  } catch {
+    return memoryWindow;
+  }
+}
+function subscribeDataWindow(listener: () => void) {
+  window.addEventListener("vayran-data-window", listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener("vayran-data-window", listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+export function useDataWindow() {
+  const days = useSyncExternalStore(subscribeDataWindow, getDataWindow, () => 7 as DataWindow);
+  function setDays(next: DataWindow) {
+    if (!DATA_WINDOWS.includes(next)) return;
+    memoryWindow = next;
+    try {
+      sessionStorage.setItem(windowKey, String(next));
+    } catch {
+      /* Session still works in memory when storage is disabled. */
+    }
+    window.dispatchEvent(new Event("vayran-data-window"));
+  }
+  return { days, setDays };
 }
