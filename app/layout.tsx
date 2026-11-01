@@ -5,7 +5,6 @@ import "./workspace.css";
 import { SessionProvider } from "@/components/vayran/session";
 import { CatalogProvider } from "@/components/vayran/catalog-provider";
 import { NavigationRail, TopBar } from "@/components/vayran/shell";
-import { version } from "@/package.json";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Skip to workspace
           </a>
           <div className="application-shell">
-            <NavigationRail version={version} />
+            <NavigationRail />
             <div className="application-main">
               <TopBar />
               <main id="main-content" tabIndex={-1}>
@@ -46,7 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   NULLXES VAYRAN <span className="footer-divider">/</span>{" "}
                   COMPETITIVE DRAFT INTELLIGENCE
                 </span>
-                <span>LOCAL WORKSPACE · NO LIVE PREDICTION</span>
+                <span>MAKE EVERY PICK COUNT</span>
               </footer>
             </div>
           </div>

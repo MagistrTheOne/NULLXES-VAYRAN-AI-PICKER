@@ -1,6 +1,6 @@
 # NULLXES VAYRAN — DATA SOURCE REPORT
 
-Updated: 2026-10-31. Status: IMPLEMENTED within available provider coverage; Immortal and calibrated prediction remain unavailable. Portrait display was explicitly authorized in the latest user instruction.
+Updated: 2026-11-01. Status: IMPLEMENTED within available provider coverage; Immortal and calibrated prediction remain unavailable. Portrait display was explicitly authorized by the owner.
 
 ## Sources and actual responses
 
@@ -44,13 +44,28 @@ Server adapters: `lib/mlbbdex.ts`, `lib/rone.ts`; contracts `lib/provider-data.t
 
 Routes: GET `/api/heroes`, `/api/heroes/[slug]`, `/api/portraits/[slug]`, `/api/rankings`, `/api/ranks`; POST `/api/synergy` computes a read-only response. Fixed upstream origins; no arbitrary URL forwarding. Error states do not invent data. Existing Draft Lab shell and state remain intact.
 
-UI: catalog provider, hero profile, published metrics, rank table and window selector, preliminary synergy panel. Source/settings/overview copy reflects real integration boundaries. No tests, mocks, commits or pushes added.
+UI: catalog provider, hero profile, published metrics, rank table and window selector, and preliminary synergy panel. The user Settings page contains preferences and the required short hero-data credit; technical provider and licensing details stay in this internal report.
+
+Draft validation permits the same hero to be banned by both teams, rejects a repeated ban within one team, and prevents picks from colliding with any ban. Portrait requests use the provider slug when available, otherwise the local hero ID as a candidate slug; the profile response must validate before its returned image mapping is redirected. This keeps identity fallback usable during catalog outages without guessing an artwork URL. Source/settings/overview copy reflects real integration boundaries. No tests, mocks, or new API calls were added for Player Lookup.
 
 ## Verification
 
-TypeScript passed. Production build passed before portrait addition; final rebuild pending. Scoped ESLint (app, components/vayran, lib) passed before portrait addition. Full ESLint reports existing set-state-in-effect errors in components/ui/carousel.tsx and hooks/use-mobile.ts, plus two warnings in alert-dialog/avatar. Actual local HTTP checks returned 200 ready: catalog 134 heroes, Khufra profile, published rankings 133 heroes, Mythic rank rows 133, Khufra compatibility with five positive pairs and no unavailable IDs. Immortal returned 422 unsupported. Actual Khufra image returned HTTP 200 image/webp, 42,610 bytes. Browser automation was unavailable; visual acceptance is not claimed.
+TypeScript (`npx tsc --noEmit`) passed. The final production build passed in an isolated output directory without replacing the build served on port 3100. Scoped ESLint on changed app/API/UI files passed. Full ESLint still reports existing errors in `components/ui/carousel.tsx` and `hooks/use-mobile.ts`, plus warnings in `components/ui/alert-dialog.tsx` and `components/ui/avatar.tsx`. Local browser rendering of Players and Settings was visually checked; an unrelated global catalog request returned HTTP 502 during the check. Earlier local HTTP checks returned 200 ready for catalog (134 heroes), Khufra profile, published rankings (133 heroes), Mythic rank rows (133), Khufra compatibility (five positive pairs); Immortal returned 422 unsupported. Khufra's mapped image returned HTTP 200 `image/webp`, 42,610 bytes.
+
+## Player Lookup provider review — 2026-11-01
+
+**Decision: no suitable public read-only lookup provider confirmed. Live lookup remains disabled.** No player IDs were submitted to any endpoint during this review.
+
+- [MLBBDex API documentation](https://mlbbdex.com/en/api-doc) documents heroes, items, and hero rankings only. Its terms explicitly state that it provides no player data.
+- [Rone Arena OpenAPI](https://arena.rone.dev/api/openapi.json) has no anonymous ID-to-profile lookup:
+  - `POST /api/user/auth/send-vc` accepts JSON `role_id` (Game ID) and `zone_id` (Server ID). It sends a four-digit verification code to the account's in-game mail, valid for five minutes. It is an ownership-verification step, not a read-only public lookup.
+  - `POST /api/user/auth/login` accepts `role_id`, `zone_id`, and `vc`, then returns JWT/session credentials.
+  - `GET /api/user/info?lang=en` returns `avatar`, `name`, `level`, `rank_level`, `history_rank_level`, `reg_country`, `roleId`, and `zoneId`; it requires the authenticated session created by the login flow.
+- [Rone hosted API terms](https://github.com/ridwaanhall/rone-arena-api/blob/main/HOSTED_API_TERMS.md) prohibit using player-facing endpoints against accounts other than the player's own. The service may rate-limit requests, has no SLA, and commercial use is by arrangement. No public quota or separate authorization for anonymous player discovery is documented.
+- The repo found via public GitHub search, [alpinekun799/mlbb_api](https://github.com/alpinekun799/mlbb_api), only provides a one-line README ("Unoffical MLBB Player"); it publishes no verifiable endpoint contract, response schema, rate limits, permission terms, or commercial terms. It is not a suitable integration source.
+
+Player Intelligence now exposes disabled Player ID / Server ID fields and a disabled **Find Player** action. It states the exact blocker and sends no requests. No mock route, lookup endpoint, credentials, or authentication flow was added.
 
 ## Next engineering step
 
 Verify remaining image coverage during use; no full-roster image availability claim is made. Confirm Rone population definitions and sample provenance before treating pair signals as reliable draft recommendations. Prediction Engine remains disconnected.
-

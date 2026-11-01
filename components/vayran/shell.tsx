@@ -10,7 +10,6 @@ import {
   Settings2,
   Shield,
   Swords,
-  Unplug,
 } from "lucide-react";
 import {
   NativeSelect,
@@ -38,7 +37,7 @@ const navigation = [
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings2 },
 ];
 
-export function NavigationRail({ version }: { version: string }) {
+export function NavigationRail() {
   const pathname = usePathname();
   return (
     <aside className="navigation-rail">
@@ -61,13 +60,6 @@ export function NavigationRail({ version }: { version: string }) {
           </Link>
         ))}
       </nav>
-      <div
-        className="rail-status"
-        title="Local interface available. Prediction engine not connected."
-      >
-        <span className="status-dot" /> LOCAL
-        <span className="version">v{version}</span>
-      </div>
     </aside>
   );
 }
@@ -108,13 +100,10 @@ export function TopBar() {
       </div>
       <div className="top-controls">
         <RankSelector />
-        <span className="engine-status">
-          <Unplug size={14} aria-hidden="true" /> Engine offline
-        </span>
         <Link
-          className="top-source"
+          className="top-settings"
           href="/settings"
-          aria-label="View data sources and settings"
+          aria-label="Open settings"
         >
           <ArrowUpRight size={17} />
         </Link>

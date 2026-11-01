@@ -26,7 +26,7 @@ type Action =
 const emptyDraft: Draft = {
   picks: { ally: {}, enemy: {} },
   bans: { ally: [], enemy: [] },
-  message: "Select a position, then choose a hero.",
+  message: "Choose your heroes to build your lineup.",
 };
 
 function draftReducer(state: Draft, action: Action, heroes: Map<string, Hero>): Draft {
@@ -61,7 +61,7 @@ function draftReducer(state: Draft, action: Action, heroes: Map<string, Hero>): 
   if (!hero)
     return {
       ...state,
-      message: "Hero is not in the verified identity catalog.",
+      message: "This hero is not available in the catalog.",
     };
   if (
     target.kind === "pick" &&
@@ -78,7 +78,11 @@ function draftReducer(state: Draft, action: Action, heroes: Map<string, Hero>): 
       : [...picked, ...state.bans.ally, ...state.bans.enemy];
   if (used.includes(action.id))
     return { ...state, message: `${hero.name} is already picked or banned.` };
-  // Free draft editor: no unverified game-mode ban limits or pick sequence imposed.
+  if (target.kind === "ban" && state.bans[target.team].length >= 5)
+    return {
+      ...state,
+      message: `Maximum of 5 bans reached for the ${target.team === "ally" ? "allied" : "enemy"} team.`,
+    };
   if (target.kind === "ban")
     return {
       ...state,

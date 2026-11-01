@@ -23,6 +23,5 @@ export function HeroProfile({ slug }: { slug: string }) {
   }, [slug, attempt]);
   if (!result) return <p role="status" className="muted-copy">Loading hero profile…</p>;
   if (result.status === "error") return <div role="status"><p className="muted-copy">{result.message}</p><Button size="xs" variant="outline" onPress={() => { setResult(null); setAttempt(value => value + 1); }}>Retry profile</Button></div>;
-  return <section className="detail-section"><h3>Skills · provider reference</h3><ul className="profile-skills">{result.data.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}</ul><p className="source-note">{result.data.images.portrait ? "Portrait supplied by MLBBDex · artwork © Moonton." : "No portrait mapping supplied."}<br/>MLBBDex · {result.data.source.name} · {result.data.source.license}</p></section>;
+  return <section className="detail-section"><h3>Skills</h3><ul className="profile-skills">{result.data.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}</ul></section>;
 }
-

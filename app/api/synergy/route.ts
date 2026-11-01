@@ -11,8 +11,8 @@ const input = z.object({
   allies: uniqueHeroIds.min(1).max(5),
   enemies: uniqueHeroIds.max(5),
   bans: z.object({
-    ally: uniqueHeroIds.max(150),
-    enemy: uniqueHeroIds.max(150),
+    ally: uniqueHeroIds.max(5),
+    enemy: uniqueHeroIds.max(5),
   }),
 });
 export async function POST(request: Request) {

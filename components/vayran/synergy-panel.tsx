@@ -13,10 +13,10 @@ export function SynergyPanel() {
   const [days, setDays] = useState<DataWindow>(7);
   const payload = JSON.stringify({ rank, days, allies: Object.values(draft.picks.ally).filter(Boolean), enemies: Object.values(draft.picks.enemy).filter(Boolean), bans: draft.bans });
   return <section className="synergy-panel">
-    <h3>PRELIMINARY SYNERGY</h3>
+    <h3>HERO PAIR DATA</h3>
     <label>Data window <NativeSelect value={days} onChange={event => setDays(Number(event.target.value) as DataWindow)}>{DATA_WINDOWS.map(day => <NativeSelectOption key={day} value={day}>{day} days</NativeSelectOption>)}</NativeSelect></label>
-    <p className="muted-copy">{rank} · Rone Arena pair statistics. These are individual pair signals, not a team win prediction.</p>
-    {rank === "Mythical Immortal" ? <p>Unsupported by this provider. No substitute rank is used.</p> : !Object.values(draft.picks.ally).some(Boolean) ? <p>Select an allied hero to see available pair signals.</p> : <SynergyResults key={payload} payload={payload} />}
+    <p className="muted-copy">{rank} · Individual teammate-pair results, not a team prediction.</p>
+    {rank === "Mythical Immortal" ? <p role="status">No pair results are available for this rank.</p> : !Object.values(draft.picks.ally).some(Boolean) ? <p>Select an allied hero to see pair results.</p> : <SynergyResults key={payload} payload={payload} />}
   </section>;
 }
 
@@ -35,19 +35,19 @@ function SynergyResults({ payload }: { payload: string }) {
     }, 400);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [payload, attempt]);
-  if (!result) return <p role="status">Loading compatibility…</p>;
-  if (result.status === "error") return <div role="status"><p>{result.message}</p><Button variant="outline" onPress={() => { setResult(null); setAttempt(value => value + 1); }}>Retry</Button></div>;
+  if (!result) return <p role="status">Loading pair data…</p>;
+  if (result.status === "error") return <div role="status"><p>Pair data is temporarily unavailable.</p><Button variant="outline" onPress={() => { setResult(null); setAttempt(value => value + 1); }}>Retry</Button></div>;
   const name = (id: string) => heroes.find(hero => hero.id === id)?.name ?? id;
   const pairs = (items: SynergyData["candidates"]) => items.map((pair, index) => <li key={`${pair.allyId}-${pair.heroId}-${index}`}>
     <strong>{name(pair.heroId)}</strong><span> with {name(pair.allyId)}</span>
-    <p><a href={pair.sourceUrl} target="_blank" rel="noreferrer">{pair.delta > 0 ? "+" : ""}{pair.delta.toFixed(2)} percentage points</a></p>
-    <small>Source record updated: {pair.recordUpdatedAt ?? "not supplied"}</small>
+    <p>{pair.delta > 0 ? "+" : ""}{pair.delta.toFixed(2)} percentage points</p>
+    {pair.recordUpdatedAt ? <small>Data record updated: {pair.recordUpdatedAt}</small> : null}
   </li>);
   return <div aria-live="polite">
     <h4>Available partners</h4>
-    {result.data.candidates.length ? <ul className="synergy-list">{pairs(result.data.candidates)}</ul> : <p>No eligible positive pair signals returned.</p>}
+    {result.data.candidates.length ? <ul className="synergy-list">{pairs(result.data.candidates)}</ul> : <p>No pair suggestions for this draft.</p>}
     {result.data.selectedPairs.length > 0 && <><h4>Selected team pairs</h4><ul className="synergy-list">{pairs(result.data.selectedPairs)}</ul></>}
-    {result.data.unavailableHeroIds.length > 0 && <p>Compatibility unavailable for: {result.data.unavailableHeroIds.map(name).join(", ")}.</p>}
-    <p className="muted-copy">{result.data.populationNote} Pair deltas are not added together. Picked and banned heroes are excluded from suggestions.</p>
+    {result.data.unavailableHeroIds.length > 0 && <p>Pair data is unavailable for: {result.data.unavailableHeroIds.map(name).join(", ")}.</p>}
+    <p className="muted-copy">Pair results are individual and should not be added together. Suggestions exclude heroes already picked or banned. Rank boundaries and match counts are not provided with these results.</p>
   </div>;
 }

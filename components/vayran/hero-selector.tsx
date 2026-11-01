@@ -14,16 +14,23 @@ export function HeroSelector({
   occupied = new Map<string, string>(),
   selectedId,
   compact = false,
+  roleFilter,
+  onRoleFilterChange,
+  selectionDisabled = false,
 }: {
   onSelect: (hero: Hero) => void;
   occupied?: Map<string, string>;
   selectedId?: string;
   compact?: boolean;
+  roleFilter?: Role | "ALL";
+  onRoleFilterChange?: (role: Role | "ALL") => void;
+  selectionDisabled?: boolean;
 }) {
   const { heroes, status } = useCatalog();
   const [query, setQuery] = useState("");
-  const [role, setRole] = useState<Role | "ALL">("ALL");
+  const [localRole, setLocalRole] = useState<Role | "ALL">("ALL");
   const [availableOnly, setAvailableOnly] = useState(false);
+  const role = roleFilter ?? localRole;
   const filtered = heroes.filter(
     (hero) =>
       hero.name.toLowerCase().includes(query.trim().toLowerCase()) &&
@@ -62,7 +69,10 @@ export function HeroSelector({
               size="xs"
               variant={role === item ? "secondary" : "ghost"}
               aria-pressed={role === item}
-              onPress={() => setRole(item)}
+              onPress={() => {
+                if (onRoleFilterChange) onRoleFilterChange(item);
+                else setLocalRole(item);
+              }}
             >
               {item === "ALL" ? "All heroes" : item}
             </Button>
@@ -85,8 +95,7 @@ export function HeroSelector({
       </div>
       {role === "GOLD" && status !== "ready" ? (
         <p className="filter-notice">
-          Gold coverage is partial. Use All heroes for the full identity
-          catalog.
+          Some heroes do not have a listed role. Select All heroes to browse the full roster.
         </p>
       ) : null}
       <div className="hero-grid">
@@ -99,13 +108,13 @@ export function HeroSelector({
               className="hero-tile"
               aria-label={`${hero.name}${unavailable ? ` — ${unavailable}` : ""}`}
               aria-pressed={selectedId === hero.id}
-              isDisabled={Boolean(unavailable)}
+              isDisabled={Boolean(unavailable) || selectionDisabled}
               onPress={() => onSelect(hero)}
             >
               <HeroPortrait hero={hero} className="hero-monogram" />
               <span className="hero-name">{hero.name}</span>
               <span className="hero-lanes">
-                {unavailable ?? (hero.roles.join(" · ") || "LANE UNVERIFIED")}
+                {unavailable ?? (hero.roles.join(" · ") || "Role not listed")}
               </span>
             </Button>
           );
@@ -114,13 +123,14 @@ export function HeroSelector({
       {filtered.length === 0 ? (
         <Unavailable
           title="No matching heroes"
-          description="Change the search or lane filter. Lane coverage is limited to the published source snapshot."
+          description="Try another search or lane. Heroes without a listed role appear under All heroes."
         />
       ) : null}
-      <footer className="catalog-footer">
-        <CatalogStatus />
-        <span>Portraits: MLBBDex · artwork © Moonton</span>
-      </footer>
+      {status !== "ready" ? (
+        <div className="catalog-status">
+          <CatalogStatus />
+        </div>
+      ) : null}
     </section>
   );
 }

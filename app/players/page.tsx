@@ -1,49 +1,44 @@
-import Link from "next/link";
-import { ArrowRight, UserRound } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeading } from "@/components/vayran/shared";
+
 export default function PlayersPage() {
   return (
     <div className="support-page">
       <PageHeading
-        eyebrow="PERSONAL COMPETITIVE CONTEXT"
+        eyebrow="PLAYER INTELLIGENCE"
         title="Player Intelligence"
-        description="Understand individual performance in the context of a team."
+        description="Find a player by Player ID and Server ID. No account connection required."
       />
-      <section className="player-unavailable">
-        <UserRound size={36} strokeWidth={1} aria-hidden="true" />
-        <Badge variant="outline">NOT AVAILABLE</Badge>
-        <h2>Player analysis is not connected.</h2>
-        <p>
-          Verified account data and explicit account consent are required. No
-          profiles, match history or personal performance have been imported.
+      <section className="player-lookup">
+        <h2>Player Lookup</h2>
+        <p>Search public player information using in-game identifiers.</p>
+        <div className="player-lookup-fields">
+          <label htmlFor="player-id">Player ID</label>
+          <Input
+            id="player-id"
+            type="text"
+            inputMode="numeric"
+            placeholder="Enter Player ID"
+            disabled
+          />
+          <label htmlFor="server-id">Server ID</label>
+          <Input
+            id="server-id"
+            type="text"
+            inputMode="numeric"
+            placeholder="Enter Server ID"
+            disabled
+          />
+        </div>
+        <Button isDisabled>Find Player</Button>
+        <p className="player-lookup-status" role="status">
+          Public player lookup is not available yet. No documented, permitted
+          read-only service for Player ID and Server ID has been confirmed.
+          Services that require in-game verification or account authentication
+          are not used.
         </p>
-        <Link href="/" className="primary-link">
-          Return to Draft Lab <ArrowRight size={16} />
-        </Link>
       </section>
-      <div className="player-capabilities">
-        {[
-          {
-            title: "Hero pool",
-            detail: "Personal proficiency and role coverage",
-          },
-          {
-            title: "Performance context",
-            detail: "Rank-specific trends across verified matches",
-          },
-          {
-            title: "Draft fit",
-            detail: "Individual strengths within a composition",
-          },
-        ].map((item) => (
-          <section key={item.title}>
-            <span className="eyebrow">FUTURE CAPABILITY</span>
-            <h3>{item.title}</h3>
-            <p>{item.detail}</p>
-          </section>
-        ))}
-      </div>
     </div>
   );
 }

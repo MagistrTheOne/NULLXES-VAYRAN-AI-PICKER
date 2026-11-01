@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Ban, Check, Plus, RotateCcw, Shield, Swords, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ROLES } from "@/lib/heroes";
+import { ROLES, type Role } from "@/lib/heroes";
 import { useCatalog } from "./catalog-provider";
 import { useDraft, type Target, type Team } from "./session";
 import { HeroSelector } from "./hero-selector";
@@ -21,6 +20,7 @@ export function DraftWorkspace() {
     team: "ally",
     role: "EXP",
   });
+  const [roleFilter, setRoleFilter] = useState<Role | "ALL">("EXP");
   const [mobileTeam, setMobileTeam] = useState<Team>("ally");
   const [confirmClear, setConfirmClear] = useState(false);
   const occupied = new Map<string, string>();
@@ -37,20 +37,22 @@ export function DraftWorkspace() {
   const pickCount =
     Object.values(draft.picks.ally).filter(Boolean).length +
     Object.values(draft.picks.enemy).filter(Boolean).length;
-  const banCount = draft.bans.ally.length + draft.bans.enemy.length;
+  const banLimitReached =
+    target.kind === "ban" && draft.bans[target.team].length >= 5;
   function selectTarget(next: Target) {
     setTarget(next);
     setMobileTeam(next.team);
+    setRoleFilter(next.kind === "pick" ? next.role : "ALL");
   }
   return (
     <div className="draft-page">
       <PageHeading
         eyebrow="COMPETITIVE DRAFT INTELLIGENCE"
         title="Draft Lab"
-        description="Build both sides. Understand the decision."
+        description="Choose your heroes. Build your lineup."
       >
         <div className="draft-heading-actions">
-          <Badge variant="outline">FREE DRAFT</Badge>
+          <Badge variant="outline">5 BANS MAX PER TEAM</Badge>
           <Button
             variant="outline"
             isDisabled={occupied.size === 0}
@@ -84,14 +86,13 @@ export function DraftWorkspace() {
       <div className="draft-context">
         <span>
           <span className="status-dot" />{" "}
-          {pickCount === 10 ? "COMPOSITIONS COMPLETE" : "DRAFT IN PROGRESS"}
+          {pickCount === 10 ? "LINEUPS COMPLETE" : "BUILD YOUR LINEUP"}
         </span>
         <span>
           {pickCount} / 10 picks<span className="count-separator">·</span>
-          {banCount} bans
-        </span>
-        <span className="draft-mode-note">
-          Manual editor · no enforced turn order
+          {draft.bans.ally.length}/5 allied bans
+          <span className="count-separator">·</span>
+          {draft.bans.enemy.length}/5 enemy bans
         </span>
       </div>
       <div className="mobile-team-switch" aria-label="Visible team">
@@ -177,7 +178,7 @@ export function DraftWorkspace() {
             <div className="ban-section">
               <div className="ban-heading">
                 <span>
-                  <Ban size={13} /> BANS
+                  <Ban size={13} /> BANS {draft.bans[team].length}/5
                 </span>
                 <Button
                   size="xs"
@@ -188,6 +189,7 @@ export function DraftWorkspace() {
                   }
                   aria-pressed={target.kind === "ban" && target.team === team}
                   aria-label={`Add ${team === "ally" ? "allied" : "enemy"} ban`}
+                  isDisabled={draft.bans[team].length >= 5}
                   onPress={() => selectTarget({ kind: "ban", team })}
                 >
                   <Plus /> Add ban
@@ -218,24 +220,36 @@ export function DraftWorkspace() {
               ) : (
                 <p className="ban-empty">No heroes banned</p>
               )}
+              {draft.bans[team].length >= 5 ? (
+                <p className="ban-empty" role="status">Maximum of 5 bans reached</p>
+              ) : null}
             </div>
           </section>
         ))}
         <section className="selection-column" aria-label="Select hero">
           <header className="selection-heading">
             <div>
-              <span className="eyebrow">HERO SELECTION</span>
+              <span className="eyebrow">BUILD YOUR LINEUP</span>
               <h2>
                 {target.team === "ally" ? "Allied" : "Enemy"} <span>/</span>{" "}
                 {target.kind === "pick" ? target.role : "Ban selection"}
               </h2>
             </div>
             <span className="selection-instruction">
-              {target.kind === "pick" ? "Select to assign" : "Select to ban"}
+              {banLimitReached
+                ? "Remove a ban to continue"
+                : target.kind === "ban"
+                  ? "Select a hero to ban"
+                  : target.team === "enemy"
+                    ? "Select an enemy hero"
+                    : "Choose your hero"}
             </span>
           </header>
           <HeroSelector
             occupied={occupied}
+            roleFilter={roleFilter}
+            onRoleFilterChange={setRoleFilter}
+            selectionDisabled={banLimitReached}
             onSelect={(hero) =>
               dispatch({ type: "select", target, id: hero.id })
             }
@@ -246,7 +260,6 @@ export function DraftWorkspace() {
         <p role="status" aria-live="polite">
           {draft.message}
         </p>
-        <Link href="/settings">Source & coverage ↗</Link>
       </div>
     </div>
   );
