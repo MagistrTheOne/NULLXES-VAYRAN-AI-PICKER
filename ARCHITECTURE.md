@@ -16,9 +16,9 @@ Product pillars:
 Primary objective: identify which **concrete change to a draft** is expected to improve its matchup, not merely output a percentage.
 
 ## 2. Scope and delivery phases
-**Phase 1 — FRONTEND (active):** production-grade Next.js interface, navigation, real interactive draft editing and validation, responsive design, accurate empty/unavailable/error states, typed contracts and isolated UI state. No backend calls, LLM integrations, match predictions or invented statistics. An intentionally empty screen is preferable to fabricated data.
+**Phase 1 — FRONTEND (active):** production-grade Next.js interface, navigation, real interactive draft editing and validation, responsive design, accurate empty/unavailable/error states, typed contracts and isolated UI state. No backend calls, LLM integrations, calibrated match predictions or invented statistics. An intentionally empty screen is preferable to fabricated data.
 
-**Phase 2 — DATA/BACKEND (not authorized yet):** source evaluation, lawful collection/import, patch/rank/region/sample provenance, authoritative statistical models, caching and guarded server endpoints.
+**Phase 2 — DATA/BACKEND (public-source integration authorized by ORDER 003A, 2026-10-30):** narrow server-only MLBBDex and Rone Arena adapters, schema validation, caching and guarded read-only data endpoints. A transparent, non-calibrated comparison of rank-filtered hero win rates may be shown, but it is not a match win probability or prediction model. No authentication, database or LLM is authorized by this integration. Rank boundaries and missing provenance remain explicit.
 
 **Phase 3 — LLM APIs (not authorized yet):** server-side OpenAI GPT and xAI Grok; Grok has the analyst role, GPT the explanation/assistant role. Exact models, endpoint contracts, pricing, quotas, output policies and enablement require explicit owner approval. **No local LLM, no fine-tuning and no self-hosted model runtime** are part of the current design.
 
@@ -48,10 +48,10 @@ Suggested navigation, introduced only as actual screens are built:
 
 Draft Lab requirements:
 - Five ally and five opponent draft positions; explicit role mapping (EXP / JUNGLE / MID / GOLD / ROAM).
-- Unique hero ID across both teams and bans; valid draft state; reversible selection, clear/reset.
+- A hero cannot be picked by both teams or picked when banned. The same hero may appear in both teams’ ban lists; duplicate bans within one team are rejected. Picks and bans remain reversible, with clear/reset.
 - Pick/ban order or stage must be explicit when prediction depends on it; do not infer unprovided drafts.
 - Each rank segment selectable without collapsing statistics into an overall tier list.
-- Explicit `not_connected`, `insufficient_data`, `unavailable` and `ready` states. **No fictional metrics or demo percentages.**
+- Explicit `not_connected`, `insufficient_data`, `unavailable` and `ready` states. Rank-filtered hero win rates may power a clearly labeled rough comparison only; never present it as a calibrated match probability. **No fictional metrics or demo percentages.**
 - Responsive desktop/mobile experience; keyboard accessibility and clear focus/disabled states.
 
 Rank policy: **exclude Grandmaster and Epic from analysis**. Legend, Mythic, Mythical Honor, Mythical Glory, Mythical Immortal are separate analytical populations. Do not aggregate them into a global rank to produce an overall hero prediction. Segmentation should later additionally account for patch, time range, role, region, party configuration and sample size where sources allow.
